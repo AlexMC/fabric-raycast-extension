@@ -54,12 +54,11 @@ export function useFabricProcessor() {
     setIsProcessing(true);
     try {
       // Process input
-      const isUrl = input.startsWith('http');
+      const isUrl = !input.includes('\n');
       const command = isUrl
-        ? `curl -s "${input}" | ${PATHS.FABRIC} --pattern ${pattern}`
+        ? `curl -sL "https://r.jina.ai/${input}" | ${PATHS.FABRIC} --pattern ${pattern}`
         : `cat "${await createTempFile(input)}" | ${PATHS.FABRIC} --pattern ${pattern}`;
 
-      // Run fabric
       const { stdout: output, stderr: error } = await executeCommand(command);
       if (error) throw new Error(`Fabric error: ${error}`);
 

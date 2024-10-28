@@ -32,7 +32,7 @@ export default function Command() {
   const { processContent, isProcessing, loadPatterns } = useFabricProcessor();
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [inputUrl, setInputUrl] = useState("");
+  const [isUrlMode, setIsUrlMode] = useState(false);
 
   useEffect(() => {
     const fetchPatterns = async () => {
@@ -54,12 +54,30 @@ export default function Command() {
     fetchPatterns();
   }, []);
 
+  const handleDropdownChange = (value: string) => {
+    setIsUrlMode(value !== "clipboard");
+  };
+
   const handleSubmit = async (pattern: Pattern, values: { saveFileName?: string; url?: string }) => {
     try {
+      if (isUrlMode) {
+        if (!values.url) {
+          await showToast({ 
+            style: Toast.Style.Failure, 
+            title: "Error", 
+            message: "URL is required" 
+          });
+          return;
+        }
+        // Remove any accidental protocol prefixes the user might add
+        const cleanUrl = values.url.replace(/^https?:\/\/(r\.jina\.ai\/)?/i, '');
+        values.url = cleanUrl;
+      }
+
       navigation.pop();
       navigation.push(<ResultView content="Processing..." isLoading={true} fileName={values.saveFileName} />);
       
-      const input = values.url || await Clipboard.readText() || "";
+      const input = isUrlMode ? values.url! : await Clipboard.readText() || "";
       const output = await processContent(pattern.name, input, values.saveFileName);
       
       navigation.pop();
@@ -76,9 +94,13 @@ export default function Command() {
       isLoading={isLoading}
       searchBarPlaceholder="Search patterns..."
       searchBarAccessory={
-        <List.Dropdown tooltip="Input Source" storeValue={true} onChange={(v) => setInputUrl(v === "clipboard" ? "" : v)}>
+        <List.Dropdown 
+          tooltip="Input Source" 
+          storeValue={true} 
+          onChange={handleDropdownChange}
+        >
           <List.Dropdown.Item title="From Clipboard" value="clipboard" />
-          <List.Dropdown.Item title="From URL" value="" />
+          <List.Dropdown.Item title="From URL" value="url" />
         </List.Dropdown>
       }
       isShowingDetail
@@ -98,7 +120,13 @@ export default function Command() {
                 title="Process with Pattern"
                 target={
                   <Form actions={<ActionPanel><Action.SubmitForm title="Process" icon={Icon.Terminal} onSubmit={(values) => handleSubmit(pattern, values)} /></ActionPanel>} isLoading={isProcessing}>
-                    {inputUrl && <Form.TextField id="url" title="URL" placeholder="Enter URL" value={inputUrl} onChange={setInputUrl} />}
+                    {isUrlMode && (
+                      <Form.TextField 
+                        id="url" 
+                        title="URL" 
+                        placeholder="Enter URL (without https://r.jina.ai/)"
+                      />
+                    )}
                     <Form.TextField id="saveFileName" title="Save As (Optional)" placeholder="Enter filename to save" />
                   </Form>
                 }
