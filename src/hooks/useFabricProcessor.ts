@@ -94,11 +94,17 @@ export function useFabricProcessor() {
   const loadPatterns = async (): Promise<Pattern[]> => {
     const files = await fs.promises.readdir(PATHS.PATTERNS);
     const patterns = await Promise.all(
-      files.map(async (file) => ({
-        name: path.basename(file, path.extname(file)),
-        path: path.join(PATHS.PATTERNS, file),
-        description: await getPatternDescription(file)
-      }))
+      files
+        .filter(file => 
+          file !== '.DS_Store' && 
+          file !== 'raycast' && 
+          !file.startsWith('.')
+        )
+        .map(async (file) => ({
+          name: path.basename(file, path.extname(file)),
+          path: path.join(PATHS.PATTERNS, file),
+          description: await getPatternDescription(file)
+        }))
     );
     return patterns;
   };
