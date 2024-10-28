@@ -17,8 +17,13 @@ interface FormValues {
   url?: string;
 }
 
-// Constants for paths
-const SAVE_TARGET_DIR = "/Users/alexandrecarvalho/Library/Mobile Documents/iCloud~md~obsidian/Documents/AlexNotesObsVault/Inbox/Fabric";
+// Define base paths as constants for better maintainability
+const PATHS = {
+  FABRIC: path.join(process.env.HOME || "", "go/bin/fabric"),
+  SAVE: path.join(process.env.HOME || "", ".local/bin/save"),
+  PATTERNS: path.join(process.env.HOME || "", ".config/fabric/patterns"),
+  SAVE_TARGET: "/Users/alexandrecarvalho/Library/Mobile Documents/iCloud~md~obsidian/Documents/AlexNotesObsVault/Inbox/Fabric"
+} as const;
 
 export default function Command() {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
@@ -26,34 +31,23 @@ export default function Command() {
   const [saveFileName, setSaveFileName] = useState("");
   const [inputUrl, setInputUrl] = useState("");
 
-  // Verify commands exist
+  // Verify required CLI tools exist
   useEffect(() => {
     const verifyCommands = async () => {
-      const fabricPath = path.join(process.env.HOME || "", "go/bin/fabric");
-      const savePath = path.join(process.env.HOME || "", ".local/bin/save");
+      const checks = [
+        { path: PATHS.FABRIC, name: 'fabric', location: '~/go/bin/' },
+        { path: PATHS.SAVE, name: 'save', location: '~/.local/bin/' }
+      ];
 
-      const fabricExists = await fs.promises.access(fabricPath)
-        .then(() => true)
-        .catch(() => false);
-      
-      const saveExists = await fs.promises.access(savePath)
-        .then(() => true)
-        .catch(() => false);
-
-      if (!fabricExists) {
-        await showToast({
-          style: Toast.Style.Failure,
-          title: "Error",
-          message: "fabric command not found in ~/go/bin/"
-        });
-      }
-
-      if (!saveExists) {
-        await showToast({
-          style: Toast.Style.Failure,
-          title: "Error",
-          message: "save command not found in ~/.local/bin/"
-        });
+      for (const check of checks) {
+        const exists = await fs.promises.access(check.path).then(() => true).catch(() => false);
+        if (!exists) {
+          await showToast({
+            style: Toast.Style.Failure,
+            title: "Error",
+            message: `${check.name} command not found in ${check.location}`
+          });
+        }
       }
     };
 
@@ -63,37 +57,24 @@ export default function Command() {
   // Load patterns from directory
   useEffect(() => {
     const loadPatterns = async () => {
-      const patternsDir = path.join(process.env.HOME || "", ".config/fabric/patterns");
-      
       try {
-        const dirExists = await fs.promises.access(patternsDir)
-          .then(() => true)
-          .catch(() => false);
-
+        const dirExists = await fs.promises.access(PATHS.PATTERNS).then(() => true).catch(() => false);
         if (!dirExists) {
-          await showToast({
-            style: Toast.Style.Failure,
-            title: "Error",
-            message: "Patterns directory does not exist!"
-          });
-          setPatterns([]);
-          setIsLoading(false);
-          return;
+          throw new Error("Patterns directory does not exist!");
         }
 
-        const files = await fs.promises.readdir(patternsDir);
+        const files = await fs.promises.readdir(PATHS.PATTERNS);
         const patternsList = files.map(file => ({
           name: path.basename(file, path.extname(file)),
-          path: path.join(patternsDir, file)
+          path: path.join(PATHS.PATTERNS, file)
         }));
+        
         setPatterns(patternsList);
-
         await showToast({
           style: Toast.Style.Success,
           title: "Patterns Loaded",
           message: `Found ${files.length} patterns`
         });
-
       } catch (error) {
         console.error("Error loading patterns:", error);
         await showToast({
@@ -101,125 +82,71 @@ export default function Command() {
           title: "Error",
           message: `Failed to load patterns: ${error}`
         });
+        setPatterns([]);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     loadPatterns();
   }, []);
 
+  // Helper function to create temporary files
+  const createTempFile = async (content: string): Promise<string> => {
+    const tempFile = path.join(process.env.TMPDIR || "/tmp", `raycast-fabric-${Date.now()}.txt`);
+    await fs.promises.writeFile(tempFile, content);
+    // Cleanup after 1 second
+    setTimeout(() => fs.unlink(tempFile, () => {}), 1000);
+    return tempFile;
+  };
+
+  // Helper function to execute shell commands
+  const executeCommand = async (command: string) => {
+    return execAsync(command, {
+      env: {
+        ...process.env,
+        PATH: `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.HOME}/go/bin:${process.env.HOME}/.local/bin:${process.env.PATH || ""}`,
+      },
+      shell: '/bin/bash'
+    });
+  };
+
   const processWithPattern = async (pattern: Pattern, formValues: FormValues) => {
     try {
-      // Debug form values
-      console.log("Form Values:", formValues);
-      console.log("Save File Name:", formValues.saveFileName);
-
-      await showToast({
-        style: Toast.Style.Animated,
-        title: "Debug Form Values",
-        message: `Save File Name: ${formValues.saveFileName || "not set"}`
-      });
-
-      const fabricPath = path.join(process.env.HOME || "", "go/bin/fabric");
-      const savePath = path.join(process.env.HOME || "", ".local/bin/save");
-      const catPath = "/bin/cat";
+      // Handle input source (URL or clipboard)
       let command = "";
-      
-      // Build command based on input type
       if (inputUrl) {
-        command = `curl -s "${inputUrl}" | ${fabricPath} --pattern ${pattern.name}`;
+        command = `curl -s "${inputUrl}" | ${PATHS.FABRIC} --pattern ${pattern.name}`;
       } else {
-        // Get clipboard content using Raycast's API
         const clipboardText = await Clipboard.readText();
-        if (!clipboardText) {
-          await showToast({
-            style: Toast.Style.Failure,
-            title: "Error",
-            message: "No text in clipboard"
-          });
-          return;
-        }
-        
-        // Create a temporary file for the clipboard content
-        const tempFile = path.join(process.env.TMPDIR || "/tmp", `raycast-fabric-${Date.now()}.txt`);
-        await fs.promises.writeFile(tempFile, clipboardText);
-        
-        command = `${catPath} "${tempFile}" | ${fabricPath} --pattern ${pattern.name}`;
-        
-        // Debug: Show clipboard content saved
-        console.log("Clipboard content saved to temp file:", tempFile);
-
-        // Clean up temp file after command execution
-        setTimeout(() => fs.unlink(tempFile, () => {}), 1000);
+        if (!clipboardText) throw new Error("No text in clipboard");
+        const tempFile = await createTempFile(clipboardText);
+        command = `cat "${tempFile}" | ${PATHS.FABRIC} --pattern ${pattern.name}`;
       }
 
-      // Debug: Show fabric command
-      console.log("Executing fabric command:", command);
+      // Process with fabric
+      const { stdout: fabricOutput, stderr: fabricError } = await executeCommand(command);
+      if (fabricError) throw new Error(`Fabric error: ${fabricError}`);
 
-      // Execute fabric command
-      const { stdout: fabricOutput, stderr: fabricError } = await execAsync(command, {
-        env: {
-          ...process.env,
-          PATH: `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.HOME}/go/bin:${process.env.HOME}/.local/bin:${process.env.PATH || ""}`,
-        },
-        shell: '/bin/bash'
-      });
-
-      console.log("Fabric Output:", fabricOutput);
-      console.log("Fabric Error:", fabricError);
-
-      // If saving is requested
+      // Handle saving if filename provided
       if (formValues.saveFileName) {
-        console.log("Save requested with filename:", formValues.saveFileName);
+        const tempOutputFile = await createTempFile(fabricOutput);
+        const saveCommand = `cat "${tempOutputFile}" | ${PATHS.SAVE} "${formValues.saveFileName}"`;
+        
+        await executeCommand(saveCommand);
 
-        // Create temporary file with fabric output
-        const tempOutputFile = path.join(process.env.TMPDIR || "/tmp", `raycast-output-${Date.now()}.txt`);
-        await fs.promises.writeFile(tempOutputFile, fabricOutput);
-        console.log("Fabric output saved to temp file:", tempOutputFile);
-
-        // Build and execute save command
-        const saveCommand = `${catPath} "${tempOutputFile}" | ${savePath} "${formValues.saveFileName}"`;
-        console.log("Executing save command:", saveCommand);
-
-        const { stdout: saveOutput, stderr: saveError } = await execAsync(saveCommand, {
-          env: {
-            ...process.env,
-            PATH: `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.HOME}/go/bin:${process.env.HOME}/.local/bin:${process.env.PATH || ""}`,
-          },
-          shell: '/bin/bash'
-        });
-
-        console.log("Save Output:", saveOutput);
-        console.log("Save Error:", saveError);
-
-        // Clean up temporary output file
-        setTimeout(() => fs.unlink(tempOutputFile, () => {}), 1000);
-
-        if (saveError) {
-          throw new Error(`Save error: ${saveError}`);
-        }
-
-        // Verify the file was saved
+        // Verify save was successful
         const currentDate = new Date().toISOString().split('T')[0];
-        const expectedFile = path.join(SAVE_TARGET_DIR, `${currentDate}-${formValues.saveFileName}.md`);
-        console.log("Looking for saved file at:", expectedFile);
+        const savedFile = path.join(PATHS.SAVE_TARGET, `${currentDate}-${formValues.saveFileName}.md`);
+        
+        const fileExists = await fs.promises.access(savedFile).then(() => true).catch(() => false);
+        if (!fileExists) throw new Error(`File not saved at: ${savedFile}`);
 
-        const fileExists = await fs.promises.access(expectedFile)
-          .then(() => true)
-          .catch(() => false);
-
-        if (fileExists) {
-          const fileContent = await fs.promises.readFile(expectedFile, 'utf8');
-          console.log('Saved File Contents:', fileContent);
-          
-          await showToast({
-            style: Toast.Style.Success,
-            title: "Success",
-            message: `File saved to: ${expectedFile}`
-          });
-        } else {
-          throw new Error(`File not saved at: ${expectedFile}`);
-        }
+        await showToast({
+          style: Toast.Style.Success,
+          title: "Success",
+          message: `File saved to: ${savedFile}`
+        });
       }
 
       return fabricOutput;
