@@ -2,15 +2,15 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "fabric-pattern-processor",
   "title": "Fabric Pattern Processor",
-  "description": "",
+  "description": "Process text using fabric patterns",
   "icon": "extension-icon.png",
   "author": "alexmc",
   "license": "MIT",
   "commands": [
     {
       "name": "fabric-pattern",
-      "title": "Fabric Pattern",
-      "description": "",
+      "title": "Process with Fabric",
+      "description": "Process text using fabric patterns",
       "mode": "view"
     }
   ],
