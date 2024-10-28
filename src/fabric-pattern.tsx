@@ -8,6 +8,7 @@ import { useFabricProcessor, PATHS } from "./hooks/useFabricProcessor";
 interface Pattern {
   name: string;
   path: string;
+  description?: string;
 }
 
 function ResultView({ content, fileName, isLoading }: { content?: string; fileName?: string; isLoading: boolean }) {
@@ -28,19 +29,16 @@ function ResultView({ content, fileName, isLoading }: { content?: string; fileNa
 
 export default function Command() {
   const navigation = useNavigation();
-  const { processContent, isProcessing } = useFabricProcessor();
+  const { processContent, isProcessing, loadPatterns } = useFabricProcessor();
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inputUrl, setInputUrl] = useState("");
 
   useEffect(() => {
-    const loadPatterns = async () => {
+    const fetchPatterns = async () => {
       try {
-        const files = await fs.promises.readdir(PATHS.PATTERNS);
-        setPatterns(files.map(file => ({
-          name: path.basename(file, path.extname(file)),
-          path: path.join(PATHS.PATTERNS, file)
-        })));
+        const patternsData = await loadPatterns();
+        setPatterns(patternsData);
       } catch (error) {
         await showToast({
           style: Toast.Style.Failure,
@@ -53,7 +51,7 @@ export default function Command() {
       }
     };
 
-    loadPatterns();
+    fetchPatterns();
   }, []);
 
   const handleSubmit = async (pattern: Pattern, values: { saveFileName?: string; url?: string }) => {
@@ -83,11 +81,17 @@ export default function Command() {
           <List.Dropdown.Item title="From URL" value="" />
         </List.Dropdown>
       }
+      isShowingDetail
     >
       {patterns.map((pattern) => (
         <List.Item
           key={pattern.name}
           title={pattern.name}
+          detail={
+            <List.Item.Detail 
+              markdown={pattern.description || '*No description available*'} 
+            />
+          }
           actions={
             <ActionPanel>
               <Action.Push

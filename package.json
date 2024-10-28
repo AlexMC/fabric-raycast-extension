@@ -3,7 +3,7 @@
   "name": "fabric-pattern-processor",
   "title": "Fabric Pattern Processor",
   "description": "Process text using fabric patterns",
-  "icon": "extension-icon.png",
+  "icon": "fabric-logo.png",
   "author": "alexmc",
   "license": "MIT",
   "commands": [

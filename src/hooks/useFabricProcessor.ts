@@ -7,12 +7,28 @@ import path from "path";
 
 const execAsync = promisify(exec);
 
+interface Pattern {
+  name: string;
+  path: string;
+  description?: string;
+}
+
 export const PATHS = {
   FABRIC: path.join(process.env.HOME || "", "go/bin/fabric"),
   SAVE: path.join(process.env.HOME || "", ".local/bin/save"),
   PATTERNS: path.join(process.env.HOME || "", ".config/fabric/patterns"),
   SAVE_TARGET: "/Users/alexandrecarvalho/Library/Mobile Documents/iCloud~md~obsidian/Documents/AlexNotesObsVault/Inbox/Fabric"
 } as const;
+
+const getPatternDescription = async (patternName: string): Promise<string> => {
+  try {
+    const systemPath = path.join(PATHS.PATTERNS, patternName, 'system.md');
+    const content = await fs.promises.readFile(systemPath, 'utf-8');
+    return content.trim();
+  } catch (error) {
+    return ''; // Return empty string if system.md doesn't exist
+  }
+};
 
 export function useFabricProcessor() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -75,5 +91,17 @@ export function useFabricProcessor() {
     });
   };
 
-  return { processContent, isProcessing };
+  const loadPatterns = async (): Promise<Pattern[]> => {
+    const files = await fs.promises.readdir(PATHS.PATTERNS);
+    const patterns = await Promise.all(
+      files.map(async (file) => ({
+        name: path.basename(file, path.extname(file)),
+        path: path.join(PATHS.PATTERNS, file),
+        description: await getPatternDescription(file)
+      }))
+    );
+    return patterns;
+  };
+
+  return { processContent, isProcessing, loadPatterns };
 }
