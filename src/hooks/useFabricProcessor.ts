@@ -72,19 +72,20 @@ export function useFabricProcessor() {
   const processContent = async (pattern: string, input: string, saveFileName?: string) => {
     setIsProcessing(true);
     try {
-      // Build fabric command with optional model flag
       const fabricCmd = `${PATHS.FABRIC} --pattern ${pattern}${PATHS.MODEL ? ` -m "${PATHS.MODEL}"` : ''}`;
       
-      // Process input
-      const isUrl = !input.includes('\n');
-      const command = isUrl
-        ? `curl -sL "https://r.jina.ai/${input}" | ${fabricCmd}`
-        : `cat "${await createTempFile(input)}" | ${fabricCmd}`;
+      let command;
+      if (input.startsWith('yt --transcript ')) {
+        command = `${input} | ${fabricCmd}`;
+      } else if (!input.includes('\n')) {
+        command = `curl -sL "https://r.jina.ai/${input}" | ${fabricCmd}`;
+      } else {
+        command = `cat "${await createTempFile(input)}" | ${fabricCmd}`;
+      }
 
       const { stdout: output, stderr: error } = await executeCommand(command);
       if (error) throw new Error(`Fabric error: ${error}`);
 
-      // Save if filename provided
       if (saveFileName) {
         await saveOutput(output, saveFileName);
       }

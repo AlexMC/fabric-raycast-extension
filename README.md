@@ -42,11 +42,23 @@ Configure the extension through Raycast preferences:
 
 ## Usage
 
-1. Select text in any application
-2. Open Raycast and search for "Process with Fabric"
+1. Open Raycast and search for "Process with Fabric"
+2. Choose your input source:
+   - **From Clipboard**: Processes text from your clipboard
+   - **From PDF URL**: Processes content from a PDF at the given URL (via r.jina.ai)
+   - **From YouTube**: Extracts and processes the transcript from a YouTube video
 3. Choose a pattern to process your text
 4. Preview the result
-5. Save the processed text to your notes directory
+5. Optionally save the processed text to your notes directory
+
+## Examples
+
+### Processing YouTube Transcripts
+1. Copy a YouTube video URL
+2. Select "From YouTube" in the input source dropdown
+3. Paste the URL in the YouTube URL field
+4. Choose your desired Fabric pattern
+5. The video's transcript will be extracted and processed according to your pattern
 
 ## Development
 
