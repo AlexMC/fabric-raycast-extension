@@ -18,6 +18,7 @@ interface Preferences {
   savePath: string;
   patternsPath: string;
   saveTargetPath?: string;
+  model?: string;
 }
 
 function expandTilde(filePath: string): string {
@@ -33,7 +34,8 @@ export const PATHS = (() => {
     FABRIC: expandTilde(preferences.fabricPath || path.join(process.env.HOME || "", "go/bin/fabric")),
     SAVE: expandTilde(preferences.savePath || path.join(process.env.HOME || "", ".local/bin/save")),
     PATTERNS: expandTilde(preferences.patternsPath || path.join(process.env.HOME || "", ".config/fabric/patterns")),
-    SAVE_TARGET: preferences.saveTargetPath ? expandTilde(preferences.saveTargetPath) : undefined
+    SAVE_TARGET: preferences.saveTargetPath ? expandTilde(preferences.saveTargetPath) : undefined,
+    MODEL: preferences.model || undefined
   } as const;
 })();
 
@@ -70,11 +72,14 @@ export function useFabricProcessor() {
   const processContent = async (pattern: string, input: string, saveFileName?: string) => {
     setIsProcessing(true);
     try {
+      // Build fabric command with optional model flag
+      const fabricCmd = `${PATHS.FABRIC} --pattern ${pattern}${PATHS.MODEL ? ` -m "${PATHS.MODEL}"` : ''}`;
+      
       // Process input
       const isUrl = !input.includes('\n');
       const command = isUrl
-        ? `curl -sL "https://r.jina.ai/${input}" | ${PATHS.FABRIC} --pattern ${pattern}`
-        : `cat "${await createTempFile(input)}" | ${PATHS.FABRIC} --pattern ${pattern}`;
+        ? `curl -sL "https://r.jina.ai/${input}" | ${fabricCmd}`
+        : `cat "${await createTempFile(input)}" | ${fabricCmd}`;
 
       const { stdout: output, stderr: error } = await executeCommand(command);
       if (error) throw new Error(`Fabric error: ${error}`);

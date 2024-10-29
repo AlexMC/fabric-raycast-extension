@@ -36,6 +36,9 @@ Configure the extension through Raycast preferences:
 - **Save Target Directory**: Where processed files will be saved
   - If not set, will use the default from your save script configuration
   - Can be configured in `~/.config/fabric/.env` with `FABRIC_OUTPUT_PATH`
+- **Model Name**: Specify which model to use with Fabric
+  - If not set, will use Fabric's default model
+  - Example: "gpt-4" or "claude-3-opus-20240229"
 
 ## Usage
 

@@ -66,6 +66,14 @@
       "title": "Save Target Directory",
       "description": "Optional: Path where processed files will be saved. If not set, will use the default from your save script configuration.",
       "default": ""
+    },
+    {
+      "name": "model",
+      "type": "textfield",
+      "required": false,
+      "title": "Model Name",
+      "description": "Optional: Specify the model to use with Fabric",
+      "default": ""
     }
   ]
 }
