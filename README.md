@@ -1,71 +1,68 @@
 # Raycast Fabric Extension
 
-A Raycast extension that integrates with Fabric to process content through customizable patterns. This extension allows you to transform text and URLs using predefined patterns and save the results to your Obsidian vault.
-
-## Prerequisites
-
-- [Raycast](https://raycast.com/) installed on your macOS system
-- [Go](https://golang.org/) installed (for Fabric binary)
-- Fabric CLI tool installed in `~/go/bin/fabric`
-- Save script in `~/.local/bin/save`
-- Obsidian (optional, for saving processed content)
-
-## Installation
-
-1. Ensure your directory structure is set up correctly:
-   ```
-   ~/go/bin/fabric              # Fabric binary
-   ~/.local/bin/save           # Save script
-   ~/.config/fabric/patterns   # Pattern definitions
-   ```
-
-2. Install the extension through Raycast's store or manually clone this repository.
+A Raycast extension for processing text through [Fabric](https://github.com/danielmiessler/fabric/tree/main/patterns)
 
 ## Features
 
-- Process both direct text input and URLs through Fabric patterns
-- Save processed output directly to your Obsidian vault
-- Support for custom pattern descriptions via `system.md` files
-- Automatic cleanup of temporary files
-- Integration with iCloud-synced Obsidian vault
+- Process text through Fabric patterns
+- Save processed text to your notes directory
+- Quick access to your Fabric patterns
+- Preview processed text before saving
+
+## Prerequisites
+
+- [Fabric](https://github.com/alcarney/fabric) installed and available in your PATH
+- The `save` script installed (for saving processed text)
+
+## Installation
+
+1. Clone this repository
+2. Run `npm install` to install dependencies
+3. Run `npm run dev` to start development mode
 
 ## Configuration
 
-The extension uses the following default paths:
-- Fabric binary: `~/go/bin/fabric`
-- Save script: `~/.local/bin/save`
-- Patterns directory: `~/.config/fabric/patterns`
-- Default save location: `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/AlexNotesObsVault/Inbox/Fabric`
+Configure the extension through Raycast preferences:
+
+### Required Paths
+- **Fabric Binary Path**: Path to the Fabric executable
+  - Default: `~/go/bin/fabric`
+- **Save Binary Path**: Path to the save script
+  - Default: `~/.local/bin/save`
+- **Patterns Directory**: Path to your Fabric patterns
+  - Default: `~/.config/fabric/patterns`
+
+### Optional Settings
+- **Save Target Directory**: Where processed files will be saved
+  - If not set, will use the default from your save script configuration
+  - Can be configured in `~/.config/fabric/.env` with `FABRIC_OUTPUT_PATH`
 
 ## Usage
 
-1. Open Raycast
-2. Select the Fabric extension
-3. Choose a pattern from the available list
-4. Enter your text or URL
-5. Optionally provide a filename to save the output
-6. Process and view/save the results
-
-## Pattern System
-
-Patterns are stored in `~/.config/fabric/patterns` and can include an optional `system.md` file for pattern descriptions. The extension will automatically load all valid patterns while filtering out system files and hidden directories.
+1. Select text in any application
+2. Open Raycast and search for "Process with Fabric"
+3. Choose a pattern to process your text
+4. Preview the result
+5. Save the processed text to your notes directory
 
 ## Development
 
-This extension is built using:
-- React
-- TypeScript
-- Raycast API
-- Node.js file system operations
+```bash
+# Install dependencies
+npm install
 
-## License
+# Start development mode
+npm run dev
 
-[Add your chosen license here]
+# Build the extension
+npm run build
+```
 
 ## Contributing
 
-[Add contribution guidelines if applicable]
-
-## Support
-
-[Add support information if applicable]
+1. Fork the repository
+2. Create a new branch
+3. Make your changes
+4. Commit your changes
+5. Push to the branch
+6. Create a pull request
