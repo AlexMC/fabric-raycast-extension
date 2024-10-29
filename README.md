@@ -12,7 +12,7 @@ A Raycast extension for processing text through [Fabric](https://github.com/dani
 ## Prerequisites
 
 - [Fabric](https://github.com/alcarney/fabric) installed and available in your PATH
-- The `save` script installed (for saving processed text)
+- The `save` script installed (available at [AlexMC/save-script](https://github.com/AlexMC/save-script)) for saving processed text
 
 ## Installation
 
