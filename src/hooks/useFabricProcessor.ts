@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { showToast, Toast, Clipboard } from "@raycast/api";
+import { showToast, Toast, Clipboard, getPreferenceValues } from "@raycast/api";
 import { exec } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
@@ -13,12 +13,29 @@ interface Pattern {
   description?: string;
 }
 
-export const PATHS = {
-  FABRIC: path.join(process.env.HOME || "", "go/bin/fabric"),
-  SAVE: path.join(process.env.HOME || "", ".local/bin/save"),
-  PATTERNS: path.join(process.env.HOME || "", ".config/fabric/patterns"),
-  SAVE_TARGET: "/Users/alexandrecarvalho/Library/Mobile Documents/iCloud~md~obsidian/Documents/AlexNotesObsVault/Inbox/Fabric"
-} as const;
+interface Preferences {
+  fabricPath: string;
+  savePath: string;
+  patternsPath: string;
+  saveTargetPath: string;
+}
+
+function expandTilde(filePath: string): string {
+  if (filePath.startsWith('~/')) {
+    return path.join(process.env.HOME || '', filePath.slice(2));
+  }
+  return filePath;
+}
+
+export const PATHS = (() => {
+  const preferences = getPreferenceValues<Preferences>();
+  return {
+    FABRIC: expandTilde(preferences.fabricPath || path.join(process.env.HOME || "", "go/bin/fabric")),
+    SAVE: expandTilde(preferences.savePath || path.join(process.env.HOME || "", ".local/bin/save")),
+    PATTERNS: expandTilde(preferences.patternsPath || path.join(process.env.HOME || "", ".config/fabric/patterns")),
+    SAVE_TARGET: expandTilde(preferences.saveTargetPath || "/Users/alexandrecarvalho/Library/Mobile Documents/iCloud~md~obsidian/Documents/AlexNotesObsVault/Inbox/Fabric")
+  } as const;
+})();
 
 const getPatternDescription = async (patternName: string): Promise<string> => {
   try {
