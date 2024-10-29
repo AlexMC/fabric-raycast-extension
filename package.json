@@ -64,7 +64,7 @@
       "type": "textfield",
       "required": false,
       "title": "Save Target Directory",
-      "description": "Path where processed files will be saved",
+      "description": "Optional: Path where processed files will be saved. If not set, will use the default from your save script configuration.",
       "default": ""
     }
   ]

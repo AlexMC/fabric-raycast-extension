@@ -17,7 +17,7 @@ interface Preferences {
   fabricPath: string;
   savePath: string;
   patternsPath: string;
-  saveTargetPath: string;
+  saveTargetPath?: string;
 }
 
 function expandTilde(filePath: string): string {
@@ -33,7 +33,7 @@ export const PATHS = (() => {
     FABRIC: expandTilde(preferences.fabricPath || path.join(process.env.HOME || "", "go/bin/fabric")),
     SAVE: expandTilde(preferences.savePath || path.join(process.env.HOME || "", ".local/bin/save")),
     PATTERNS: expandTilde(preferences.patternsPath || path.join(process.env.HOME || "", ".config/fabric/patterns")),
-    SAVE_TARGET: expandTilde(preferences.saveTargetPath || "/Users/alexandrecarvalho/Library/Mobile Documents/iCloud~md~obsidian/Documents/AlexNotesObsVault/Inbox/Fabric")
+    SAVE_TARGET: preferences.saveTargetPath ? expandTilde(preferences.saveTargetPath) : undefined
   } as const;
 })();
 
@@ -92,13 +92,22 @@ export function useFabricProcessor() {
 
   const saveOutput = async (content: string, fileName: string) => {
     const tempFile = await createTempFile(content);
-    await executeCommand(`cat "${tempFile}" | ${PATHS.SAVE} "${fileName}"`);
     
-    const currentDate = new Date().toISOString().split('T')[0];
-    const savedFile = path.join(PATHS.SAVE_TARGET, `${currentDate}-${fileName}.md`);
+    // Build save command conditionally
+    const saveCommand = PATHS.SAVE_TARGET 
+      ? `cat "${tempFile}" | ${PATHS.SAVE} -d "${PATHS.SAVE_TARGET}" "${fileName}"`
+      : `cat "${tempFile}" | ${PATHS.SAVE} "${fileName}"`;
     
-    const fileExists = await fs.promises.access(savedFile).then(() => true).catch(() => false);
-    if (!fileExists) throw new Error(`File not saved at: ${savedFile}`);
+    await executeCommand(saveCommand);
+    
+    // Only attempt to verify the file if we know where it was saved
+    if (PATHS.SAVE_TARGET) {
+      const currentDate = new Date().toISOString().split('T')[0];
+      const savedFile = path.join(PATHS.SAVE_TARGET, `${currentDate}-${fileName}.md`);
+      
+      const fileExists = await fs.promises.access(savedFile).then(() => true).catch(() => false);
+      if (!fileExists) throw new Error(`File not saved at: ${savedFile}`);
+    }
 
     await showToast({
       style: Toast.Style.Success,
