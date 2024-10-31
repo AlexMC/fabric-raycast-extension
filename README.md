@@ -69,6 +69,10 @@ Configure the extension through Raycast preferences:
 3. Choose your desired Fabric pattern
 4. The video's transcript will be extracted and processed according to your pattern
 
+## Demo
+
+https://github.com/alexmc/raycast-fabric-pattern-processor/assets/demo.mp4
+
 ## Development
 
 ```bash
