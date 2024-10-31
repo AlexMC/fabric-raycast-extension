@@ -4,6 +4,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
 import path from "path";
+import { fetchUrlContent } from '../utils/urlFetcher';
 
 const execAsync = promisify(exec);
 
@@ -55,8 +56,15 @@ export function useFabricProcessor() {
   const createTempFile = async (content: string): Promise<string> => {
     const tempFile = path.join(process.env.TMPDIR || "/tmp", `raycast-fabric-${Date.now()}.txt`);
     await fs.promises.writeFile(tempFile, content);
-    setTimeout(() => fs.unlink(tempFile, () => {}), 1000);
     return tempFile;
+  };
+
+  const cleanupTempFile = async (tempFile: string) => {
+    try {
+      await fs.promises.unlink(tempFile);
+    } catch (error) {
+      console.error('Error cleaning up temp file:', error);
+    }
   };
 
   const executeCommand = async (command: string) => {
@@ -77,14 +85,32 @@ export function useFabricProcessor() {
       let command;
       if (input.startsWith('yt --transcript ')) {
         command = `${input} | ${fabricCmd}`;
-      } else if (!input.includes('\n')) {
-        command = `curl -sL "https://r.jina.ai/${input}" | ${fabricCmd}`;
+      } else if (input.startsWith('-u ')) {
+        const url = input.slice(3);
+        const content = await fetchUrlContent(url);
+        const tempFile = await createTempFile(content);
+        
+        try {
+          command = `cat "${tempFile}" | ${fabricCmd}`;
+          const { stdout } = await executeCommand(command);
+          await cleanupTempFile(tempFile);
+          return stdout;
+        } catch (error) {
+          await cleanupTempFile(tempFile);
+          throw error;
+        }
       } else {
         command = `cat "${await createTempFile(input)}" | ${fabricCmd}`;
       }
 
+      console.log(`Executing command: ${command}`);
       const { stdout: output, stderr: error } = await executeCommand(command);
-      if (error) throw new Error(`Fabric error: ${error}`);
+      console.log(`Output: ${output}`);
+      console.log(`Error: ${error}`);
+      
+      if (error) {
+        throw new Error(`Fabric error: ${error}`);
+      }
 
       if (saveFileName) {
         await saveOutput(output, saveFileName);

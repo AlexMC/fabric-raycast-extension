@@ -72,12 +72,11 @@ export default function Command() {
           await showToast({ 
             style: Toast.Style.Failure, 
             title: "Error", 
-            message: "PDF URL is required" 
+            message: "URL is required" 
           });
           return;
         }
-        const cleanUrl = values.url.replace(/^https?:\/\/(r\.jina\.ai\/)?/i, '');
-        input = cleanUrl;
+        input = `-u ${values.url}`;
       } else if (inputMode === "youtube") {
         if (!values.youtubeUrl) {
           await showToast({ 
@@ -117,7 +116,7 @@ export default function Command() {
           onChange={handleDropdownChange}
         >
           <List.Dropdown.Item title="From Clipboard" value="clipboard" />
-          <List.Dropdown.Item title="From PDF URL" value="url" />
+          <List.Dropdown.Item title="From URL" value="url" />
           <List.Dropdown.Item title="From YouTube" value="youtube" />
         </List.Dropdown>
       }
@@ -149,8 +148,8 @@ export default function Command() {
                     {inputMode === "url" && (
                       <Form.TextField 
                         id="url" 
-                        title="PDF URL" 
-                        placeholder="Enter PDF URL (without https://r.jina.ai/)"
+                        title="URL" 
+                        placeholder="Enter URL to process"
                       />
                     )}
                     {inputMode === "youtube" && (

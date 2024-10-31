@@ -4,7 +4,11 @@ A Raycast extension for processing text through [Fabric](https://github.com/dani
 
 ## Features
 
-- Process text through Fabric patterns
+- Process text through Fabric patterns using multiple input sources:
+  - Clipboard text
+  - Web URLs (HTML content)
+  - PDF URLs (via r.jina.ai)
+  - YouTube video transcripts
 - Save processed text to your notes directory
 - Quick access to your Fabric patterns
 - Preview processed text before saving
@@ -45,7 +49,7 @@ Configure the extension through Raycast preferences:
 1. Open Raycast and search for "Process with Fabric"
 2. Choose your input source:
    - **From Clipboard**: Processes text from your clipboard
-   - **From PDF URL**: Processes content from a PDF at the given URL (via r.jina.ai)
+   - **From URL**: Processes content from a webpage or PDF
    - **From YouTube**: Extracts and processes the transcript from a YouTube video
 3. Choose a pattern to process your text
 4. Preview the result
@@ -53,12 +57,17 @@ Configure the extension through Raycast preferences:
 
 ## Examples
 
+### Processing Web Content
+1. Select "From URL" in the input source dropdown
+2. Enter the URL of the webpage or PDF you want to process
+3. Choose your desired Fabric pattern
+4. The content will be fetched and processed according to your pattern
+
 ### Processing YouTube Transcripts
-1. Copy a YouTube video URL
-2. Select "From YouTube" in the input source dropdown
-3. Paste the URL in the YouTube URL field
-4. Choose your desired Fabric pattern
-5. The video's transcript will be extracted and processed according to your pattern
+1. Select "From YouTube" in the input source dropdown
+2. Enter the YouTube video URL
+3. Choose your desired Fabric pattern
+4. The video's transcript will be extracted and processed according to your pattern
 
 ## Development
 
