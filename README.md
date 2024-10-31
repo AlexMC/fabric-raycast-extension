@@ -71,7 +71,7 @@ Configure the extension through Raycast preferences:
 
 ## Demo
 
-![Demo](https://raw.githubusercontent.com/alexmc/raycast-fabric-pattern-processor/main/.github/assets/demo.gif)
+![Demo](https://raw.githubusercontent.com/AlexMC/fabric-raycast-extension/master/.github/assets/demo.gif)
 
 ## Development
 
